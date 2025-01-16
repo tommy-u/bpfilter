@@ -23,21 +23,50 @@
 #include "core/set.h"
 #include "libbpfilter/bpfilter.h"
 
+// Define ANSI color codes as macros
+#define NORMAL "\033[0m"
+#define GREEN "\033[1;32m"
+#define YELLOW "\033[1;33m"
+#define RED "\033[1;31m"
+// General function to print colored text
+void fprintf_color(FILE *stream, const char *color, const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    fprintf(stream, "%s", color);  // Set text color
+    vfprintf(stream, format, args);
+    fprintf(stream, "%s", NORMAL); // Reset text color to normal
+    va_end(args);
+}
+#define fprintf_green(stream, format, ...) fprintf_color(stream, GREEN, format, ##__VA_ARGS__)
+#define fprintf_yellow(stream, format, ...) fprintf_color(stream, YELLOW, format, ##__VA_ARGS__)
+#define fprintf_red(stream, format, ...) fprintf_color(stream, RED, format, ##__VA_ARGS__)
+
 int bf_send(const struct bf_request *request, struct bf_response **response);
 
+// Unsure if all these are needed
 static struct bf_options
 {
     const char *input_file;
     const char *input_string;
+    bool get_ctrs;
+    const char *chain_name;
+    const char *rule_name;
 } _bf_opts = {
     .input_file = NULL,
+    .get_ctrs = false,
+    .chain_name = NULL,
+    .rule_name = NULL,
 };
 
 static struct argp_option options[] = {
     {"file", 'f', "INPUT_FILE", 0, "Input file to use a rules source", 0},
     {"str", 's', "INPUT_STRING", 0, "String to use as rules", 0},
+    {"test", 't', "INPUT_STRING", 0, "String to use as rules", 0},
+    {"get-ctrs", 'g', "CHAIN_NAME::RULE_NAME", 0, "Get counters for chain CHAIN_NAME and rule RULE_NAME", 0},
     {0},
 };
+
+bool magic = false;
 
 static error_t _bf_opts_parser(int key, const char *arg,
                                struct argp_state *state)
@@ -52,6 +81,32 @@ static error_t _bf_opts_parser(int key, const char *arg,
         break;
     case 's':
         opts->input_string = arg;
+        break;
+    case 't':
+        // This is a test designed to do the same thing as 's' but with a magic string
+        fprintf_yellow(stdout, "Here we configure the magic\n");
+        opts->input_string = arg;
+        magic = true;
+
+        _bf_opts.chain_name = "mychain";
+        _bf_opts.rule_name = "myrule";
+
+        break;
+    case 'g':
+        // Handle the "get-ctrs" subcommand
+        char *chain_name, *rule_name, *colon_ptr;
+        colon_ptr = strchr(arg, ':');
+        if (!colon_ptr) {
+            return bf_err_r(-EINVAL, "Invalid get-ctrs argument, expected <chain>:<rule>");
+        }
+        // this allocated memory. prob want to change it
+        chain_name = strndup(arg, colon_ptr - arg);
+        rule_name = strdup(colon_ptr + 1);
+
+        opts->chain_name = chain_name;
+        opts->rule_name = rule_name;
+
+        opts->get_ctrs = true;
         break;
     case ARGP_KEY_END:
         if (!opts->input_file && !opts->input_string)
@@ -148,7 +203,15 @@ int main(int argc, char *argv[])
     bf_list_foreach (&ruleset.chains, chain_node) {
         const struct bf_chain *chain = bf_list_node_get_data(chain_node);
 
-        r = bf_cli_set_chain(chain);
+        if (magic) {
+            fprintf(stderr, "This is the magic ctrs request\n");
+            int ctr_val = -1;
+            r = bf_cli_get_ctrs(_bf_opts.chain_name, _bf_opts.rule_name, &ctr_val);
+            fprintf_green(stderr, "ctr value: %d\n", ctr_val);
+
+        } else {
+            r = bf_cli_set_chain(chain);
+        }
         if (r < 0) {
             bf_err("failed to set chain for '%s', skipping remaining chains",
                    bf_hook_to_str(chain->hook));

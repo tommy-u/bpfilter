@@ -22,6 +22,8 @@ struct nlmsghdr;
  */
 int bf_cli_set_chain(const struct bf_chain *chain);
 
+int bf_cli_get_ctrs(const char *chain_name, const char *rule_name, int *ctrs);
+
 /**
  * Send iptable's ipt_replace data to bpfilter daemon.
  *
