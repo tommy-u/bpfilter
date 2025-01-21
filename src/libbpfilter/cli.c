@@ -40,7 +40,7 @@ int bf_cli_set_chain(const struct bf_chain *chain)
 }
 
 // How to send the chain to the daemon
-int bf_cli_get_ctrs(const char *chain_name, const char *rule_name, int *ctr_response)
+int bf_cli_get_ctrs(const char *chain_name, const char *rule_name, uint64_t *ctr_response)
 {
     fprintf(stderr, "bf_cli_get_ctrs\n");
     // Copying the origional function for now
@@ -80,7 +80,8 @@ int bf_cli_get_ctrs(const char *chain_name, const char *rule_name, int *ctr_resp
 
     free(chain_name_buf);
 
-    *ctr_response = *(int *) response->data;
+    ctr_response[0] = *(uint64_t *) response->data;
+    ctr_response[1] = *(uint64_t *) (response->data + 8);
 
     return response->type == BF_RES_FAILURE ? response->error : 0;
 }

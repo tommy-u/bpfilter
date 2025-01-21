@@ -205,9 +205,11 @@ int main(int argc, char *argv[])
 
         if (magic) {
             fprintf(stderr, "This is the magic ctrs request\n");
-            int ctr_val = -1;
-            r = bf_cli_get_ctrs(_bf_opts.chain_name, _bf_opts.rule_name, &ctr_val);
-            fprintf_green(stderr, "ctr value: %d\n", ctr_val);
+            uint64_t ctr_vals[2];
+            r = bf_cli_get_ctrs(_bf_opts.chain_name, _bf_opts.rule_name, ctr_vals);
+
+            fprintf_green(stderr, "packets: %d\n", ctr_vals[0]);
+            fprintf_green(stderr, "bytes:   %d\n", ctr_vals[1]);
 
         } else {
             r = bf_cli_set_chain(chain);

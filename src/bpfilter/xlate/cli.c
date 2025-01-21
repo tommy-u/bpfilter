@@ -3,6 +3,10 @@
  * Copyright (c) 2022 Meta Platforms, Inc. and affiliates.
  */
 
+#include "core/bpf.h"
+#include "bpfilter/cgen/program.h"
+#include "bpfilter/cgen/prog/map.h"
+
 #include <errno.h>
 #include <stdlib.h>
 
@@ -77,13 +81,29 @@ int _bf_cli_get_ctrs(const struct bf_request *request,
 
     fprintf_red(stderr, "pretend to lookup chain and rule here\n");
 
-    // print the chain and rule strings
+
+    struct bf_cgen *cgen = bf_ctx_get_cgen(BF_HOOK_NF_LOCAL_IN, NULL);
+    // check if cgen is null
+    if (cgen == NULL) {
+        fprintf(stderr, "cgen is null\n");
+        return -1;
+    }
+
+    uint32_t counter_idx = 1;
+    struct bf_counter counter;
+    bf_program_get_counter(cgen->program, counter_idx, &counter);
+
+    // print the counter
+    fprintf(stderr, "counter.packets: %lu\n", counter.packets);
+    fprintf(stderr, "counter.bytes: %lu\n", counter.bytes);
+
     fprintf_green(stderr, "chain: %s, rule: %s\n", chain_str, rule_str);
 
     // query the map for the given chain and rule and return the counters
+    uint64_t  ret[2] = {counter.packets, counter.bytes};
+    assert(sizeof(ret) == sizeof(uint64_t) * 2);
 
-    int response_val = 42;
-    return bf_response_new_success(response, (const char *) &response_val, sizeof(int));
+    return bf_response_new_success(response, (const char *) ret, sizeof(ret));
 }
 
 int _bf_cli_set_rules(const struct bf_request *request,
