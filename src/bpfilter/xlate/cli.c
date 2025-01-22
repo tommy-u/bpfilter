@@ -78,9 +78,16 @@ int _bf_cli_get_ctrs(const struct bf_request *request,
 
     // Get characters after the colon and store as rule string
     char *rule_str = strtok(NULL, ":");
+    // We gotta think before implementing this.
+    UNUSED(rule_str);
 
-    fprintf_red(stderr, "pretend to lookup chain and rule here\n");
+    // If this is for another chain, return an error
+    if( ! strcmp(chain_str, "BF_HOOK_NF_LOCAL_IN") == 0){
+        fprintf(stderr, "chain is not BF_HOOK_NF_LOCAL_IN\n");
+        return -1;
+    }
 
+    // todo manage all possible chains.
 
     struct bf_cgen *cgen = bf_ctx_get_cgen(BF_HOOK_NF_LOCAL_IN, NULL);
     // check if cgen is null
@@ -94,14 +101,9 @@ int _bf_cli_get_ctrs(const struct bf_request *request,
     bf_program_get_counter(cgen->program, counter_idx, &counter);
 
     // print the counter
-    fprintf(stderr, "counter.packets: %lu\n", counter.packets);
-    fprintf(stderr, "counter.bytes: %lu\n", counter.bytes);
-
-    fprintf_green(stderr, "chain: %s, rule: %s\n", chain_str, rule_str);
 
     // query the map for the given chain and rule and return the counters
     uint64_t  ret[2] = {counter.packets, counter.bytes};
-    assert(sizeof(ret) == sizeof(uint64_t) * 2);
 
     return bf_response_new_success(response, (const char *) ret, sizeof(ret));
 }

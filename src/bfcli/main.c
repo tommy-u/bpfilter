@@ -82,16 +82,6 @@ static error_t _bf_opts_parser(int key, const char *arg,
     case 's':
         opts->input_string = arg;
         break;
-    case 't':
-        // This is a test designed to do the same thing as 's' but with a magic string
-        fprintf_yellow(stdout, "Here we configure the magic\n");
-        opts->input_string = arg;
-        magic = true;
-
-        _bf_opts.chain_name = "mychain";
-        _bf_opts.rule_name = "myrule";
-
-        break;
     case 'g':
         // Handle the "get-ctrs" subcommand
         char *chain_name, *rule_name, *colon_ptr;
@@ -107,8 +97,14 @@ static error_t _bf_opts_parser(int key, const char *arg,
         opts->rule_name = rule_name;
 
         opts->get_ctrs = true;
+
+        magic = true;
+
+        fprintf(stderr, "Done configuring g case\n");
         break;
     case ARGP_KEY_END:
+        if (magic) return 0;
+
         if (!opts->input_file && !opts->input_string)
             return bf_err_r(-EINVAL, "--file or --str argument is required");
         if (opts->input_file && opts->input_string)
@@ -179,13 +175,16 @@ int main(int argc, char *argv[])
         goto end_clean;
     }
 
-    if (_bf_opts.input_file)
-        r = _bf_cli_parse_file(_bf_opts.input_file, &ruleset);
-    else
-        r = _bf_cli_parse_str(_bf_opts.input_string, &ruleset);
-    if (r) {
-        bf_err_r(r, "failed to parse ruleset");
-        goto end_clean;
+    fprintf(stderr, "Parsed args\n");
+    if (!magic) {
+        if (_bf_opts.input_file)
+            r = _bf_cli_parse_file(_bf_opts.input_file, &ruleset);
+        else
+            r = _bf_cli_parse_str(_bf_opts.input_string, &ruleset);
+        if (r) {
+            bf_err_r(r, "failed to parse ruleset");
+            goto end_clean;
+        }
     }
 
     // Set rules indexes
@@ -203,23 +202,24 @@ int main(int argc, char *argv[])
     bf_list_foreach (&ruleset.chains, chain_node) {
         const struct bf_chain *chain = bf_list_node_get_data(chain_node);
 
-        if (magic) {
-            fprintf(stderr, "This is the magic ctrs request\n");
-            uint64_t ctr_vals[2];
-            r = bf_cli_get_ctrs(_bf_opts.chain_name, _bf_opts.rule_name, ctr_vals);
-
-            fprintf_green(stderr, "packets: %d\n", ctr_vals[0]);
-            fprintf_green(stderr, "bytes:   %d\n", ctr_vals[1]);
-
-        } else {
-            r = bf_cli_set_chain(chain);
-        }
+        r = bf_cli_set_chain(chain);
         if (r < 0) {
             bf_err("failed to set chain for '%s', skipping remaining chains",
                    bf_hook_to_str(chain->hook));
             goto end_clean;
         }
     }
+
+    if (magic) {
+        fprintf(stderr, "This is the magic ctrs request\n");
+        uint64_t ctr_vals[2];
+        r = bf_cli_get_ctrs(_bf_opts.chain_name, _bf_opts.rule_name, ctr_vals);
+
+        fprintf_green(stderr, "packets: %d\n", ctr_vals[0]);
+        fprintf_green(stderr, "bytes:   %d\n", ctr_vals[1]);
+
+    }
+
 
 end_clean:
     bf_list_clean(&ruleset.chains);
