@@ -61,7 +61,6 @@ static struct bf_options
 static struct argp_option options[] = {
     {"file", 'f', "INPUT_FILE", 0, "Input file to use a rules source", 0},
     {"str", 's', "INPUT_STRING", 0, "String to use as rules", 0},
-    {"test", 't', "INPUT_STRING", 0, "String to use as rules", 0},
     {"get-ctrs", 'g', "CHAIN_NAME::RULE_NAME", 0, "Get counters for chain CHAIN_NAME and rule RULE_NAME", 0},
     {0},
 };
