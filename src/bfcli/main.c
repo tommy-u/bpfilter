@@ -65,8 +65,6 @@ static struct argp_option options[] = {
     {0},
 };
 
-bool magic = false;
-
 static error_t _bf_opts_parser(int key, const char *arg,
                                struct argp_state *state)
 {
@@ -97,12 +95,10 @@ static error_t _bf_opts_parser(int key, const char *arg,
 
         opts->get_ctrs = true;
 
-        magic = true;
-
         fprintf(stderr, "Done configuring g case\n");
         break;
     case ARGP_KEY_END:
-        if (magic) return 0;
+        if (opts->get_ctrs) return 0;
 
         if (!opts->input_file && !opts->input_string)
             return bf_err_r(-EINVAL, "--file or --str argument is required");
@@ -174,8 +170,7 @@ int main(int argc, char *argv[])
         goto end_clean;
     }
 
-    fprintf(stderr, "Parsed args\n");
-    if (!magic) {
+    if (! _bf_opts.get_ctrs) {
         if (_bf_opts.input_file)
             r = _bf_cli_parse_file(_bf_opts.input_file, &ruleset);
         else
@@ -209,7 +204,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (magic) {
+    if (_bf_opts.get_ctrs) {
         fprintf(stderr, "This is the magic ctrs request\n");
         uint64_t ctr_vals[2];
         r = bf_cli_get_ctrs(_bf_opts.chain_name, _bf_opts.rule_name, ctr_vals);
