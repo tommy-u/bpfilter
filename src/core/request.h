@@ -69,6 +69,11 @@ struct bf_request
         {
             int ipt_cmd;
         };
+
+        struct
+        {
+            bool with_counters;
+        };
     };
 
     size_t data_len;
