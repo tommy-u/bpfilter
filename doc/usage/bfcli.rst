@@ -42,7 +42,7 @@ Get all rules: requests the daemon to return all chains and all rules of each ch
 
 .. code:: shell
 
-    bfcli ruleset get
+    # bfcli ruleset get
     chain BF_HOOK_NF_LOCAL_IN{attach=yes,ifindex=0} policy: ACCEPT
         rule: 0
                 matcher(s):
@@ -51,7 +51,7 @@ Get all rules: requests the daemon to return all chains and all rules of each ch
 
 .. code:: shell
 
-    bfcli ruleset get --with-counters
+    # bfcli ruleset get --with-counters
     chain BF_HOOK_NF_LOCAL_IN{attach=yes,ifindex=0} policy: ACCEPT
         counters: policy 32742421 bytes 40841 packets; error 0 bytes 0 packets
         rule: 0
