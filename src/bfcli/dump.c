@@ -18,11 +18,6 @@
 #include "core/marsh.h"
 #include "core/rule.h"
 
-// Declare all static functions here
-static void bf_dump_hex_local(const void *data, size_t len);
-static void bf_cli_chain_dump(struct bf_chain *chain, bool with_counters,
-                              struct bf_counter **counter);
-
 // TODO: Obviously resolve this duplication of bf_dump_hex
 #define BF_DUMP_HEXDUMP_LEN 8
 #define BF_DUMP_TOKEN_LEN 5
