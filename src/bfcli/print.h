@@ -13,7 +13,8 @@
 /**
  * Print ruleset information and counters to the console.
  *
- * @param chains_and_counters_marsh Pointer to the marshalled chains and counters returned by the daemon.
+ * @param chains_and_counters_marsh Pointer to the marshalled chains and
+ *        counters returned by the daemon.
  * @param with_counters Whether to print counters or not.
  * @return 0 on success, negative errno code on failure.
  */

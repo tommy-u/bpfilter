@@ -166,7 +166,8 @@ static int _bf_cli_get_chain_list(bf_list *cgens, bf_list *chains)
  * Create a marshalled structure of counters.
  *
  * @param cgens A list of code generators. Must be non-NULL.
- * @param counter_marsh A pointer to a bf_marsh pointer where the counters will be marshalled. Must be non-NULL.
+ * @param counter_marsh A pointer to a bf_marsh pointer where
+ *        the counters will be marshalled. Must be non-NULL.
  * @return 0 on success or negative error code on failure.
  */
 static int _bf_cli_get_counters_marsh(bf_list *cgens,

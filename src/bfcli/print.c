@@ -50,8 +50,10 @@ static void bf_dump_hex_local(const void *data, size_t len)
  * Dump the details of a chain, including its rules and counters.
  *
  * @param chain Pointer to the chain to be dumped. Must be non-NULL.
- * @param with_counters Boolean flag indicating whether to include counters in the dump.
- * @param counter Pointer to the array of counters associated with the chain. Must be non-NULL if with_counters is true.
+ * @param with_counters Boolean flag indicating whether to include
+ *        counters in the dump.
+ * @param counter Pointer to the array of counters associated with the
+ *        chain. Must be non-NULL if with_counters is true.
  */
 static void bf_cli_chain_dump(struct bf_chain *chain, bool with_counters,
                               struct bf_counter **counter)
