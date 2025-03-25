@@ -15,7 +15,7 @@
 #include "core/rule.h"
 #include "libbpfilter/generic.h"
 
-int bf_cli_request_ruleset(struct bf_response **response, bool with_counters)
+int bf_cli_ruleset_get(struct bf_response **response, bool with_counters)
 {
     _cleanup_bf_request_ struct bf_request *request = NULL;
     int r;
