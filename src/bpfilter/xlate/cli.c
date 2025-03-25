@@ -193,8 +193,7 @@ static int _bf_cli_get_counters_marsh(bf_list *cgens,
     r = bf_marsh_new(counter_marsh, counters,
                      num_counters * sizeof(struct bf_counter));
     if (r < 0)
-        if (r < 0)
-            return bf_err_r(r, "failed to make new marsh\n");
+        return bf_err_r(r, "failed to make new marsh\n");
 
     return 0;
 }
