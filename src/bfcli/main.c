@@ -201,7 +201,7 @@ int _bf_do_ruleset_get(int argc, char *argv[])
     static struct argp_option options[] = {
         // use enum
         {"with-counters", BF_OPT_COUNTERS, 0, 0,
-         "Print rule and chain counters", 0},
+         "Print packets and bytes counters", 0},
         {0},
     };
     struct argp argp = {
