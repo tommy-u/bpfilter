@@ -3,7 +3,7 @@
  * Copyright (c) 2023 Meta Platforms, Inc. and affiliates.
  */
 
-#include "dump.h"
+#include "print.h"
 
 #include <errno.h>
 #include <stdbool.h>

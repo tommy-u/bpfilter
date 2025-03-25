@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "bfcli/dump.h"
+#include "bfcli/print.h"
 #include "bfcli/lexer.h"
 #include "bfcli/parser.h"
 #include "core/chain.h"
