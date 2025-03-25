@@ -166,18 +166,17 @@ static int _bf_cli_get_chain_list(bf_list *cgens, bf_list *chains)
  * Create a marshalled structure of counters.
  *
  * @param cgens A list of code generators. Must be non-NULL.
- * @param counter_marsh Marsh to serialize the counters into.
+ * @param marsh Marsh to serialize the counters into.
  *        Can't be NULL.
  * @return 0 on success or negative error code on failure.
  */
-static int _bf_cli_get_counters_marsh(bf_list *cgens,
-                                      struct bf_marsh **counter_marsh)
+static int _bf_cli_get_counters_marsh(bf_list *cgens, struct bf_marsh **marsh)
 {
     int r;
     size_t num_counters = 0;
     _cleanup_free_ struct bf_counter *counters = NULL;
 
-    bf_assert(counter_marsh && cgens);
+    bf_assert(marsh && cgens);
 
     /* Each chain has a policy counter and an error counter.
      * Each rule has a counter, though it may be unused. */
@@ -191,8 +190,7 @@ static int _bf_cli_get_counters_marsh(bf_list *cgens,
     if (r < 0)
         return bf_err_r(r, "could not get ctr vals\n");
 
-    r = bf_marsh_new(counter_marsh, counters,
-                     num_counters * sizeof(struct bf_counter));
+    r = bf_marsh_new(marsh, counters, num_counters * sizeof(struct bf_counter));
     if (r < 0)
         return bf_err_r(r, "failed to make new marsh\n");
 
