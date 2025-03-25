@@ -222,9 +222,6 @@ int _bf_do_ruleset_get(int argc, char *argv[])
     if (r < 0)
         return bf_err_r(r, "failed to request ruleset\n");
 
-    if (response->type == BF_RES_FAILURE)
-        return bf_err_r(response->error, "failed to get ruleset\n");
-
     if (response->data_len == 0) {
         bf_info("no ruleset returned\n");
         return 0;
