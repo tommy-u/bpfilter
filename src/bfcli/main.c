@@ -11,9 +11,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "bfcli/print.h"
 #include "bfcli/lexer.h"
 #include "bfcli/parser.h"
+#include "bfcli/print.h"
 #include "core/chain.h"
 #include "core/helper.h"
 #include "core/hook.h"
