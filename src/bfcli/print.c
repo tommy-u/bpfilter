@@ -84,9 +84,6 @@ static void bf_cli_chain_dump(struct bf_chain *chain, bool with_counters,
                 chain_counter->packets);
     }
 
-    // So we can use bf_dump_hex_local
-    bf_opts_set_verbose(BF_VERBOSE_DEBUG);
-
     // Loop over rules
     bf_list_foreach (&chain->rules, rule_node) {
         struct bf_rule *rule = bf_list_node_get_data(rule_node);
