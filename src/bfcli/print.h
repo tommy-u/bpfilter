@@ -11,12 +11,6 @@
 #include "core/marsh.h"
 
 /**
- * @file dump.h
- *
- * Tools for printing CLI data to the console.
- */
-
-/**
  * Print ruleset information and counters to the console.
  *
  * @param chains_and_counters_marsh Pointer to the marshalled chains and counters returned by the daemon.
