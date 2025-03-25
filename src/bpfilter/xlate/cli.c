@@ -210,32 +210,30 @@ static int _bf_cli_get_rules(const struct bf_request *request,
     if (bf_ctx_is_empty())
         return bf_response_new_success(response, NULL, 0);
 
-    {
-        _clean_bf_list_ bf_list cgens = bf_list_default(NULL, NULL);
-        _clean_bf_list_ bf_list chains = bf_list_default(NULL, bf_chain_marsh);
+    _clean_bf_list_ bf_list cgens = bf_list_default(NULL, NULL);
+    _clean_bf_list_ bf_list chains = bf_list_default(NULL, bf_chain_marsh);
 
-        r = bf_ctx_get_cgens_for_front(&cgens, BF_FRONT_CLI);
-        if (r < 0)
-            return bf_err_r(r, "failed to get cgen list\n");
+    r = bf_ctx_get_cgens_for_front(&cgens, BF_FRONT_CLI);
+    if (r < 0)
+        return bf_err_r(r, "failed to get cgen list\n");
 
-        r = _bf_cli_get_chain_list(&cgens, &chains);
-        if (r < 0)
-            return bf_err_r(r, "failed to create the chain list");
+    r = _bf_cli_get_chain_list(&cgens, &chains);
+    if (r < 0)
+        return bf_err_r(r, "failed to create the chain list");
 
-        // Marsh the chain list
-        r = bf_list_marsh(&chains, &chains_marsh);
-        if (r < 0)
-            return bf_err_r(r, "failed to marshal list\n");
+    // Marsh the chain list
+    r = bf_list_marsh(&chains, &chains_marsh);
+    if (r < 0)
+        return bf_err_r(r, "failed to marshal list\n");
 
-        // Marsh the counters
-        if (request->cli_with_counters) {
-            r = _bf_cli_get_counters_marsh(&cgens, &counter_marsh);
-        } else {
-            r = bf_marsh_new(&counter_marsh, NULL, 0);
-        }
-        if (r < 0)
-            return bf_err_r(r, "failed to get counters marsh\n");
+    // Marsh the counters
+    if (request->cli_with_counters) {
+        r = _bf_cli_get_counters_marsh(&cgens, &counter_marsh);
+    } else {
+        r = bf_marsh_new(&counter_marsh, NULL, 0);
     }
+    if (r < 0)
+        return bf_err_r(r, "failed to get counters marsh\n");
 
     // Marsh the chain list and counters marshes into a single response
     r = bf_marsh_new(&result_marsh, NULL, 0);
