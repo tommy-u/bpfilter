@@ -81,33 +81,6 @@ static size_t _bf_cli_num_rules(bf_list *cgens)
 }
 
 /**
- * Populate a list of chains from list of code generators.
- *
- * @param cgens Pointer to list of generators. Must be non-NULL.
- * @param chains Pointer to list for storing the chains. Must be non-NULL.
- * @return 0 on success or negative error code on failure.
- */
-static int _bf_cli_get_chain_list(bf_list *cgens, bf_list *chains)
-{
-    _clean_bf_list_ bf_list _chains = bf_list_default(NULL, bf_chain_marsh);
-    int r;
-
-    bf_assert(cgens && chains);
-
-    // iterate over the codegens to get the chains
-    bf_list_foreach (cgens, cgen_node) {
-        struct bf_cgen *cgen = bf_list_node_get_data(cgen_node);
-        r = bf_list_add_tail(&_chains, cgen->chain);
-        if (r)
-            return bf_err_r(r, "failed to add chain to list");
-    }
-
-    *chains = bf_list_move(_chains);
-
-    return 0;
-}
-
-/**
  * Create a marshalled structure of counters.
  *
  * @param cgens A list of code generators. Must be non-NULL.
@@ -184,6 +157,7 @@ static int _bf_cli_get_rules(const struct bf_request *request,
     _cleanup_bf_marsh_ struct bf_marsh *chains_marsh = NULL;
     _cleanup_bf_marsh_ struct bf_marsh *counter_marsh = NULL;
     _cleanup_bf_marsh_ struct bf_marsh *result_marsh = NULL;
+    _clean_bf_list_ bf_list _chains = bf_list_default(NULL, bf_chain_marsh);
     int r;
 
     // Empty context, nothing to return
@@ -197,9 +171,15 @@ static int _bf_cli_get_rules(const struct bf_request *request,
     if (r < 0)
         return bf_err_r(r, "failed to get cgen list\n");
 
-    r = _bf_cli_get_chain_list(&cgens, &chains);
-    if (r < 0)
-        return bf_err_r(r, "failed to create the chain list");
+    // iterate over the codegens to get the chains
+    bf_list_foreach (&cgens, cgen_node) {
+        struct bf_cgen *cgen = bf_list_node_get_data(cgen_node);
+        r = bf_list_add_tail(&_chains, cgen->chain);
+        if (r)
+            return bf_err_r(r, "failed to add chain to list");
+    }
+
+    chains = bf_list_move(_chains);
 
     // Marsh the chain list
     r = bf_list_marsh(&chains, &chains_marsh);
