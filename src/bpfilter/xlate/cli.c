@@ -60,27 +60,6 @@ int _bf_cli_ruleset_flush(const struct bf_request *request,
 }
 
 /**
- * Count rules across all code generators.
- *
- * @param cgens A list of code generators. Can't be NULL.
- * @return The total number of rules.
- */
-static size_t _bf_cli_num_rules(bf_list *cgens)
-{
-    bf_assert(cgens);
-
-    size_t count = 0;
-    bf_list_foreach (cgens, cgen_node) {
-        struct bf_cgen *cgen = bf_list_node_get_data(cgen_node);
-        struct bf_chain *chain = cgen->chain;
-
-        count += bf_list_size(&chain->rules);
-    }
-
-    return count;
-}
-
-/**
  * Create a marshalled structure of counters.
  *
  * @param cgens A list of code generators. Must be non-NULL.
@@ -90,63 +69,72 @@ static size_t _bf_cli_num_rules(bf_list *cgens)
  */
 static int _bf_cli_get_counters_marsh(bf_list *cgens, struct bf_marsh **marsh)
 {
-    int r, counter_index = 0;
-    size_t num_counters = 0;
-    _cleanup_free_ struct bf_counter *counters = NULL;
+    _clean_bf_list_ bf_list counters =
+        bf_list_default(bf_counter_free, bf_counter_marsh);
+    int r;
 
     bf_assert(marsh && cgens);
 
-    /* Each chain has a policy counter and an error counter.
-     * Each rule has a counter, though it may be unused. */
-    num_counters = (2 * bf_list_size(cgens)) + _bf_cli_num_rules(cgens);
-
-    counters = calloc(num_counters, sizeof(struct bf_counter));
-    if (!counters)
-        return bf_err_r(-ENOMEM, "failed to allocate memory for counters\n");
-
-    bf_assert(cgens && counters);
-
+    // Iterate over chains and rules to get the counters
     bf_list_foreach (cgens, cgen_node) {
         struct bf_cgen *cgen = bf_list_node_get_data(cgen_node);
+        struct bf_counter *counter;
 
-        // Iterate over each rule in the current cgen's chain
-        int map_idx = 0;
+        /**
+         * Each chain has 2 counters: policy and error
+         * Each rule has 1 counter regardless of rule->counters.
+         * So we'll add a zero counter for the case where
+         * rule->counters == false.
+        */
         bf_list_foreach (&cgen->chain->rules, rule_node) {
             struct bf_rule *rule = bf_list_node_get_data(rule_node);
+            int map_idx = 0;
+
+            r = bf_counter_new(&counter, 0, 0);
+            if (r)
+                return bf_err_r(r, "failed to create counter\n");
 
             if (rule->counters) {
-                // Query the BPF map for the counter values
-                r = bf_cgen_get_counter(cgen, map_idx,
-                                        &counters[counter_index]);
+                r = bf_cgen_get_counter(cgen, map_idx, counter);
                 if (r < 0)
                     return bf_err_r(r, "failed to get rule counter\n");
             }
 
-            /* Note: The map has entries for every rule regardless of whether the
-                * input rule specified "COUNTERS" or not. Thus, advancing map_index
-                * is unconditional. When rule->counters == false, the corresponding
-                * counter value will remain {0,0}. */
-            counter_index++;
+            r = bf_list_add_tail(&counters, counter);
+            if (r < 0)
+                return bf_err_r(r, "failed to add rule counter to list\n");
             map_idx++;
         }
 
         // Chain's policy counter
-        r = bf_cgen_get_counter(cgen, BF_COUNTER_POLICY,
-                                &counters[counter_index]);
+        r = bf_counter_new(&counter, 0, 0);
+        if (r)
+            return bf_err_r(r, "failed to create counter\n");
+
+        r = bf_cgen_get_counter(cgen, BF_COUNTER_POLICY, counter);
         if (r < 0)
             return bf_err_r(r, "failed to get policy counter\n");
-        counter_index++;
+
+        r = bf_list_add_tail(&counters, counter);
+        if (r < 0)
+            return bf_err_r(r, "failed to add policy counter to list\n");
 
         // Chain's error counter
-        r = bf_cgen_get_counter(cgen, BF_COUNTER_ERRORS,
-                                &counters[counter_index]);
+        r = bf_counter_new(&counter, 0, 0);
+        if (r)
+            return bf_err_r(r, "failed to create counter\n");
+        r = bf_cgen_get_counter(cgen, BF_COUNTER_ERRORS, counter);
         if (r < 0)
             return bf_err_r(r, "failed to get error counter\n");
+
+        r = bf_list_add_tail(&counters, counter);
+        if (r < 0)
+            return bf_err_r(r, "failed to add error counter to list\n");
     }
 
-    r = bf_marsh_new(marsh, counters, num_counters * sizeof(struct bf_counter));
+    r = bf_list_marsh(&counters, marsh);
     if (r < 0)
-        return bf_err_r(r, "failed to make new marsh\n");
+        return bf_err_r(r, "failed to make counters list marsh\n");
 
     return 0;
 }
@@ -154,18 +142,17 @@ static int _bf_cli_get_counters_marsh(bf_list *cgens, struct bf_marsh **marsh)
 static int _bf_cli_get_rules(const struct bf_request *request,
                              struct bf_response **response)
 {
-    _cleanup_bf_marsh_ struct bf_marsh *chains_marsh = NULL;
-    _cleanup_bf_marsh_ struct bf_marsh *counter_marsh = NULL;
-    _cleanup_bf_marsh_ struct bf_marsh *result_marsh = NULL;
+    _cleanup_bf_marsh_ struct bf_marsh *chains_marsh = NULL,
+                                       *counter_marsh = NULL,
+                                       *result_marsh = NULL;
+    _clean_bf_list_ bf_list chains = bf_list_default(NULL, bf_chain_marsh);
     _clean_bf_list_ bf_list _chains = bf_list_default(NULL, bf_chain_marsh);
+    _clean_bf_list_ bf_list cgens = bf_list_default(NULL, NULL);
     int r;
 
     // Empty context, nothing to return
     if (bf_ctx_is_empty())
         return bf_response_new_success(response, NULL, 0);
-
-    _clean_bf_list_ bf_list cgens = bf_list_default(NULL, NULL);
-    _clean_bf_list_ bf_list chains = bf_list_default(NULL, bf_chain_marsh);
 
     r = bf_ctx_get_cgens_for_front(&cgens, BF_FRONT_CLI);
     if (r < 0)

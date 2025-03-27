@@ -55,13 +55,14 @@ static void bf_dump_hex_local(const void *data, size_t len)
  * @param counter Pointer to the array of counters associated with the
  *        chain. Must be non-NULL if with_counters is true.
  */
-static void bf_cli_chain_dump(struct bf_chain *chain, bool with_counters,
-                              struct bf_counter **counter)
+static int bf_cli_chain_dump(struct bf_chain *chain, bool with_counters,
+                             bf_list *counters)
 {
     bf_assert(chain);
-    bf_assert(!with_counters || counter);
+    bf_assert(!with_counters || counters);
 
     struct bf_hook_opts *opts = &chain->hook_opts;
+    struct bf_counter *counter = NULL;
 
     (void)fprintf(stderr, "chain %s", bf_hook_to_str(chain->hook));
     (void)fprintf(stderr, "{");
@@ -74,16 +75,27 @@ static void bf_cli_chain_dump(struct bf_chain *chain, bool with_counters,
     (void)fprintf(stderr, " policy: %s\n", bf_verdict_to_str(chain->policy));
 
     if (with_counters) {
-        // Policy counter is the first one after the rules; error counter follows it.
-        struct bf_counter *chain_counter =
-            *counter + bf_list_size(&chain->rules);
+        /**
+         * Rule counters are followed by policy and error counters.
+         * These bf_list_get_at() calls cost linear time.
+        */
+        counter = (struct bf_counter *)bf_list_get_at(
+            counters, bf_list_size(&chain->rules));
+        if (!counter) {
+            return bf_err_r(-ENOENT, "got null policy counter\n");
+        }
+
         (void)fprintf(stderr, "\tcounters: policy %lu bytes %lu packets; ",
-                      chain_counter->bytes, chain_counter->packets);
+                      counter->bytes, counter->packets);
 
-        chain_counter++;
+        counter = (struct bf_counter *)bf_list_get_at(
+            counters, bf_list_size(&chain->rules) + 1);
+        if (!counter) {
+            return bf_err_r(-ENOENT, "got null error counter\n");
+        }
 
-        (void)fprintf(stderr, "error %lu bytes %lu packets\n",
-                      chain_counter->bytes, chain_counter->packets);
+        (void)fprintf(stderr, "error %lu bytes %lu packets\n", counter->bytes,
+                      counter->packets);
     }
 
     // Loop over rules
@@ -104,27 +116,43 @@ static void bf_cli_chain_dump(struct bf_chain *chain, bool with_counters,
             (void)fprintf(stderr, "\n");
         }
 
+        // Print the counters and remove the head
         if (with_counters && rule->counters) {
+            struct bf_list_node *head = bf_list_get_head(counters);
+            if (!head) {
+                return bf_err_r(-ENOENT, "no entry in list \n");
+            }
+
+            counter = (struct bf_counter *)bf_list_node_get_data(head);
+            if (!counter) {
+                return bf_err_r(-ENOENT, "got null error counter\n");
+            }
+
             (void)fprintf(stderr, "\t\tcounters: %lu bytes %lu packets\n",
-                          (*counter)->bytes, (*counter)->packets);
-            (*counter)++;
+                          counter->bytes, counter->packets);
+            bf_list_delete(counters, head);
         }
 
         (void)fprintf(stderr, "\t\tverdict: %s\n",
                       bf_verdict_to_str(rule->verdict));
     }
 
-    // Skip over the policy and error counters
-    (*counter) += 2;
+    if (with_counters) {
+        // remove the next 2 counters for privacy and error
+        bf_list_delete(counters, bf_list_get_head(counters));
+        bf_list_delete(counters, bf_list_get_head(counters));
+    }
 
     (void)fprintf(stderr, "\n");
+
+    return 0;
 }
 
 int bf_cli_dump_ruleset(struct bf_marsh *chains_and_counters_marsh,
                         bool with_counters)
 {
     struct bf_marsh *chains_marsh, *chain_marsh = NULL, *counters_marsh;
-    struct bf_counter *counters;
+    // struct bf_counter *counters;
     int r;
 
     bf_assert(chains_and_counters_marsh);
@@ -136,7 +164,7 @@ int bf_cli_dump_ruleset(struct bf_marsh *chains_and_counters_marsh,
         return -EINVAL;
     }
 
-    // Get the array of counters
+    // Get the marshaled list of counters
     counters_marsh =
         bf_marsh_next_child(chains_and_counters_marsh, chains_marsh);
     if (!counters_marsh) {
@@ -144,7 +172,25 @@ int bf_cli_dump_ruleset(struct bf_marsh *chains_and_counters_marsh,
         return -EINVAL;
     }
 
-    counters = (struct bf_counter *)counters_marsh->data;
+    _clean_bf_list_ bf_list counters = bf_list_default(bf_counter_free, NULL);
+
+    struct bf_marsh *child = NULL;
+    while (true) {
+        _cleanup_bf_counter_ struct bf_counter *counter = NULL;
+
+        // Get the next child
+        child = bf_marsh_next_child(counters_marsh, child);
+        if (!child) {
+            break;
+        }
+
+        r = bf_counter_new_from_marsh(&counter, child);
+        if (r < 0)
+            return bf_err_r(r, "failed to unmarsh counter");
+
+        r = bf_list_add_tail(&counters, counter);
+        TAKE_PTR(counter);
+    }
 
     // Loop over the chains
     while (true) {
@@ -160,7 +206,9 @@ int bf_cli_dump_ruleset(struct bf_marsh *chains_and_counters_marsh,
         if (r < 0)
             return bf_err_r(r, "failed to unmarsh chain");
 
-        bf_cli_chain_dump(chain, with_counters, &counters);
+        r = bf_cli_chain_dump(chain, with_counters, &counters);
+        if (r < 0)
+            return bf_err_r(r, "failed to dump chain");
     }
 
     return 0;
