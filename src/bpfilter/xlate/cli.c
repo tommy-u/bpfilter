@@ -11,6 +11,7 @@
 #include "bpfilter/ctx.h"
 #include "bpfilter/xlate/front.h"
 #include "core/chain.h"
+#include "core/counter.h"
 #include "core/front.h"
 #include "core/helper.h"
 #include "core/list.h"
