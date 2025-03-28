@@ -49,19 +49,19 @@ static void bf_dump_hex_local(const void *data, size_t len)
  * Dump the details of a chain, including its rules and counters.
  *
  * @param chain Pointer to the chain to be dumped. Must be non-NULL.
- * @param with_counters Boolean flag indicating whether to include
- *        counters in the dump.
  * @param counter Pointer to the array of counters associated with the
  *        chain. Must be non-NULL if with_counters is true.
+ * @param with_counters Boolean flag indicating whether to include
+ *        counters in the dump.
  */
-static int bf_cli_chain_dump(struct bf_chain *chain, bool with_counters,
-                             bf_list *counters)
+static int bf_cli_chain_dump(struct bf_chain *chain, bf_list *counters,
+                             bool with_counters)
 {
-    bf_assert(chain);
-    bf_assert(!with_counters || counters);
-
     struct bf_hook_opts *opts = &chain->hook_opts;
     struct bf_counter *counter = NULL;
+
+    bf_assert(chain);
+    bf_assert(!with_counters || counters);
 
     (void)fprintf(stderr, "chain %s", bf_hook_to_str(chain->hook));
     (void)fprintf(stderr, "{");
@@ -137,7 +137,7 @@ static int bf_cli_chain_dump(struct bf_chain *chain, bool with_counters,
     }
 
     if (with_counters) {
-        // remove the next 2 counters for privacy and error
+        // remove the chain counters: policy and error
         bf_list_delete(counters, bf_list_get_head(counters));
         bf_list_delete(counters, bf_list_get_head(counters));
     }
@@ -147,26 +147,18 @@ static int bf_cli_chain_dump(struct bf_chain *chain, bool with_counters,
     return 0;
 }
 
-int bf_cli_dump_ruleset(bf_list *chains, bf_list *counters,
-                        bool with_counters)
+int bf_cli_dump_ruleset(bf_list *chains, bf_list *counters, bool with_counters)
 {
     int r;
 
     bf_assert(chains);
     bf_assert(!with_counters || counters);
 
-
-    printf("in bfcli dump ruleset\n");
-    // print sizes of lists
-    printf("chains size: %ld\n", bf_list_size(chains));
-    printf("counters size: %ld\n", bf_list_size(counters));
-
     // loop over all chains and print them
     bf_list_foreach (chains, chain_node) {
         struct bf_chain *chain = bf_list_node_get_data(chain_node);
 
-        // Print the chain
-        r = bf_cli_chain_dump(chain, with_counters, counters);
+        r = bf_cli_chain_dump(chain, counters, with_counters);
         if (r < 0)
             return bf_err_r(r, "failed to dump chain");
     }

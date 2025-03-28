@@ -23,9 +23,10 @@ static int
 bf_cli_get_chains_and_counters(bf_list *chains, bf_list *counters,
                                struct bf_marsh *chains_and_counters_marsh)
 {
-    int r;
     struct bf_marsh *chains_marsh, *chain_marsh = NULL, *counters_marsh;
-    // struct bf_counter *counters;
+    struct bf_marsh *child = NULL;
+    int r;
+
     // Get the chain list
     chains_marsh = bf_marsh_next_child(chains_and_counters_marsh, NULL);
     if (!chains_marsh) {
@@ -41,10 +42,6 @@ bf_cli_get_chains_and_counters(bf_list *chains, bf_list *counters,
         return -EINVAL;
     }
 
-    // we should do this in libbpfilter
-    // _clean_bf_list_ bf_list counters = bf_list_default(bf_counter_free, NULL);
-
-    struct bf_marsh *child = NULL;
     while (true) {
         _cleanup_bf_counter_ struct bf_counter *counter = NULL;
 
@@ -63,8 +60,6 @@ bf_cli_get_chains_and_counters(bf_list *chains, bf_list *counters,
     }
 
     // Loop over the chains
-    // this will become loop over bf_list chains
-    // use some of this to produce chain list
     while (true) {
         _cleanup_bf_chain_ struct bf_chain *chain = NULL;
 
@@ -114,14 +109,8 @@ int bf_cli_ruleset_get(bf_list *chains, bf_list *counters, bool with_counters)
         return 0;
     }
 
-    // Probably want to turn response into chain and counters lists here
     bf_cli_get_chains_and_counters(chains, counters,
                                    (struct bf_marsh *)response->data);
-    printf("got chains and counters\n");
-
-    // print sizes of the 2 lists
-    printf("chains size: %ld\n", bf_list_size(chains));
-    printf("counters size: %ld\n", bf_list_size(counters));
 
     return 0;
 }

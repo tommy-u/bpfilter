@@ -13,11 +13,10 @@
 /**
  * Print ruleset information and counters to the console.
  *
- * @param chains_and_counters_marsh Pointer to the marshalled chains and
- *        counters returned by the daemon.
+ * @param chains List of chains to print.
+ * @param counters List of counters to print.
  * @param with_counters Whether to print counters or not.
  * @return 0 on success, negative errno code on failure.
  */
 
-int bf_cli_dump_ruleset(bf_list *chains, bf_list *counters,
-                        bool with_counters);
+int bf_cli_dump_ruleset(bf_list *chains, bf_list *counters, bool with_counters);
