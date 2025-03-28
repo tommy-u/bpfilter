@@ -8,9 +8,10 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "core/list.h"
+
 struct bf_response;
 struct bf_chain;
-struct bf_list;
 struct ipt_getinfo;
 struct ipt_get_entries;
 struct ipt_replace;
@@ -40,7 +41,7 @@ int bf_cli_ruleset_flush(void);
  * @param with_counters If true, the daemon will return the counters.
  * @return 0 on success, or a negative errno value on error.
  */
-int bf_cli_ruleset_get(struct bf_list *chains, struct bf_list *counters, bool with_counters);
+int bf_cli_ruleset_get(bf_list *chains, bf_list *counters, bool with_counters);
 
 /**
  * Send a chain to the daemon.
