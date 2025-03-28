@@ -10,6 +10,7 @@
 
 struct bf_response;
 struct bf_chain;
+struct bf_list;
 struct ipt_getinfo;
 struct ipt_get_entries;
 struct ipt_replace;
@@ -34,12 +35,12 @@ int bf_cli_ruleset_flush(void);
  * Request the daemon to return all the chains and all of
  * the associated rules.
  *
- * @param response Pointer to response structure (to be allocated).
- * can't be NULL.
+ * @param chains list of bf_chain type to be filled.
+ * @param counters list of bf_counter type to be filled.
  * @param with_counters If true, the daemon will return the counters.
  * @return 0 on success, or a negative errno value on error.
  */
-int bf_cli_ruleset_get(struct bf_response **response, bool with_counters);
+int bf_cli_ruleset_get(struct bf_list *chains, struct bf_list *counters, bool with_counters);
 
 /**
  * Send a chain to the daemon.

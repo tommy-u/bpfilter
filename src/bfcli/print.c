@@ -16,7 +16,6 @@
 #include "core/hook.h"
 #include "core/list.h"
 #include "core/logger.h"
-#include "core/marsh.h"
 #include "core/matcher.h"
 #include "core/rule.h"
 #include "core/verdict.h"
@@ -148,65 +147,26 @@ static int bf_cli_chain_dump(struct bf_chain *chain, bool with_counters,
     return 0;
 }
 
-int bf_cli_dump_ruleset(struct bf_marsh *chains_and_counters_marsh,
+int bf_cli_dump_ruleset(bf_list *chains, bf_list *counters,
                         bool with_counters)
 {
-    struct bf_marsh *chains_marsh, *chain_marsh = NULL, *counters_marsh;
-    // struct bf_counter *counters;
     int r;
 
-    bf_assert(chains_and_counters_marsh);
+    bf_assert(chains);
+    bf_assert(!with_counters || counters);
 
-    // Get the chain list
-    chains_marsh = bf_marsh_next_child(chains_and_counters_marsh, NULL);
-    if (!chains_marsh) {
-        bf_err("failed to locate chain list from daemon response\n");
-        return -EINVAL;
-    }
 
-    // Get the marshaled list of counters
-    counters_marsh =
-        bf_marsh_next_child(chains_and_counters_marsh, chains_marsh);
-    if (!counters_marsh) {
-        bf_err("failed to locate counter array from daemon response\n");
-        return -EINVAL;
-    }
+    printf("in bfcli dump ruleset\n");
+    // print sizes of lists
+    printf("chains size: %ld\n", bf_list_size(chains));
+    printf("counters size: %ld\n", bf_list_size(counters));
 
-    _clean_bf_list_ bf_list counters = bf_list_default(bf_counter_free, NULL);
+    // loop over all chains and print them
+    bf_list_foreach (chains, chain_node) {
+        struct bf_chain *chain = bf_list_node_get_data(chain_node);
 
-    struct bf_marsh *child = NULL;
-    while (true) {
-        _cleanup_bf_counter_ struct bf_counter *counter = NULL;
-
-        // Get the next child
-        child = bf_marsh_next_child(counters_marsh, child);
-        if (!child) {
-            break;
-        }
-
-        r = bf_counter_new_from_marsh(&counter, child);
-        if (r < 0)
-            return bf_err_r(r, "failed to unmarsh counter");
-
-        r = bf_list_add_tail(&counters, counter);
-        TAKE_PTR(counter);
-    }
-
-    // Loop over the chains
-    while (true) {
-        _cleanup_bf_chain_ struct bf_chain *chain = NULL;
-
-        // Get the next child
-        chain_marsh = bf_marsh_next_child(chains_marsh, chain_marsh);
-        if (!chain_marsh) {
-            break;
-        }
-
-        r = bf_chain_new_from_marsh(&chain, chain_marsh);
-        if (r < 0)
-            return bf_err_r(r, "failed to unmarsh chain");
-
-        r = bf_cli_chain_dump(chain, with_counters, &counters);
+        // Print the chain
+        r = bf_cli_chain_dump(chain, with_counters, counters);
         if (r < 0)
             return bf_err_r(r, "failed to dump chain");
     }

@@ -15,11 +15,11 @@
 #include "bfcli/parser.h"
 #include "bfcli/print.h"
 #include "core/chain.h"
+#include "core/counter.h"
 #include "core/helper.h"
 #include "core/hook.h"
 #include "core/list.h"
 #include "core/logger.h"
-#include "core/marsh.h"
 #include "core/request.h"
 #include "core/response.h"
 #include "core/set.h"
@@ -210,7 +210,10 @@ int _bf_do_ruleset_get(int argc, char *argv[])
         0,       NULL,
         NULL,
     };
-    _cleanup_bf_response_ struct bf_response *response = NULL;
+    _clean_bf_list_ bf_list chains =
+        bf_list_default(bf_chain_free, bf_chain_marsh);
+    _clean_bf_list_ bf_list counters =
+        bf_list_default(bf_counter_free, bf_counter_marsh);
     int r;
 
     r = argp_parse(&argp, argc, argv, 0, 0, &opts);
@@ -218,17 +221,11 @@ int _bf_do_ruleset_get(int argc, char *argv[])
         bf_err_r(r, "failed to parse arguments");
 
     // Ask libbpfilter to make a request to the daemon
-    r = bf_cli_ruleset_get(&response, opts.with_counters);
+    r = bf_cli_ruleset_get(&chains, &counters, opts.with_counters);
     if (r < 0)
         return bf_err_r(r, "failed to request ruleset\n");
 
-    if (response->data_len == 0) {
-        bf_info("no ruleset returned\n");
-        return 0;
-    }
-
-    r = bf_cli_dump_ruleset((struct bf_marsh *)response->data,
-                            opts.with_counters);
+    r = bf_cli_dump_ruleset(&chains, &counters, opts.with_counters);
     if (r)
         return bf_err_r(r, "failed to dump ruleset\n");
 
