@@ -59,6 +59,8 @@ static int bf_cli_chain_dump(struct bf_chain *chain, bf_list *counters,
 {
     struct bf_hook_opts *opts = &chain->hook_opts;
     struct bf_counter *counter = NULL;
+    uint32_t used_opts = chain->hook_opts.used_opts;
+    bool need_comma = false;
 
     bf_assert(chain);
     bf_assert(!with_counters || counters);
@@ -66,10 +68,25 @@ static int bf_cli_chain_dump(struct bf_chain *chain, bf_list *counters,
     (void)fprintf(stderr, "chain %s", bf_hook_to_str(chain->hook));
     (void)fprintf(stderr, "{");
 
-    (void)fprintf(stderr, "attach=%s,", opts->attach ? "yes" : "no");
-    (void)fprintf(stderr, "ifindex=%d", opts->ifindex);
-    if (opts->name)
-        (void)fprintf(stderr, ",name=%s", opts->name);
+    if (used_opts & (1 << BF_HOOK_OPT_ATTACH)) {
+        (void)fprintf(stderr, "attach=%s", opts->attach ? "yes" : "no");
+        need_comma = true;
+    }
+
+    if (used_opts & (1 << BF_HOOK_OPT_IFINDEX)) {
+        if (need_comma)
+            (void)fprintf(stderr, ",");
+        (void)fprintf(stderr, "ifindex=%d", opts->ifindex);
+        need_comma = true;
+    }
+
+    if (used_opts & (1 << BF_HOOK_OPT_NAME)) {
+        if (need_comma)
+            (void)fprintf(stderr, ",");
+        (void)fprintf(stderr, "name=%s", opts->name);
+        need_comma = true;
+    }
+
     (void)fprintf(stderr, "}");
     (void)fprintf(stderr, " policy: %s\n", bf_verdict_to_str(chain->policy));
 
@@ -80,9 +97,8 @@ static int bf_cli_chain_dump(struct bf_chain *chain, bf_list *counters,
         */
         counter = (struct bf_counter *)bf_list_get_at(
             counters, bf_list_size(&chain->rules));
-        if (!counter) {
+        if (!counter)
             return bf_err_r(-ENOENT, "got null policy counter\n");
-        }
 
         (void)fprintf(stderr, "    counters policy %lu packets %lu bytes; ",
                       counter->packets, counter->bytes);

@@ -43,7 +43,7 @@ Get all rules: requests the daemon to return all chains and all rules of each ch
 .. code:: shell
 
     $ sudo bfcli ruleset get
-    chain BF_HOOK_NF_LOCAL_IN{attach=yes,ifindex=0} policy: ACCEPT
+    chain BF_HOOK_NF_LOCAL_IN{attach=yes} policy: ACCEPT
         rule: 0
                 matcher(s):
                         ip4.saddr not 0xc0 0xa8 0x00 0x44 0xff 0xff 0xff 0xff
@@ -52,7 +52,7 @@ Get all rules: requests the daemon to return all chains and all rules of each ch
 .. code:: shell
 
     $ sudo bfcli ruleset get --with-counters
-    chain BF_HOOK_NF_LOCAL_IN{attach=yes,ifindex=0} policy: ACCEPT
+    chain BF_HOOK_NF_LOCAL_IN{attach=yes} policy: ACCEPT
         counters policy 40841 packets 32742421 bytes; error 0 packets 0 bytes
         rule: 0
                 matcher(s):
