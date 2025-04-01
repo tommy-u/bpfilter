@@ -18,5 +18,4 @@
  * @param with_counters Whether to print counters or not.
  * @return 0 on success, negative errno code on failure.
  */
-
 int bf_cli_dump_ruleset(bf_list *chains, bf_list *counters, bool with_counters);
