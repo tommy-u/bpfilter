@@ -19,13 +19,36 @@
 #include "core/rule.h"
 #include "libbpfilter/generic.h"
 
-static int
-bf_cli_get_chains_and_counters(bf_list *chains, bf_list *counters,
-                               struct bf_marsh *chains_and_counters_marsh)
+int bf_cli_ruleset_get(bf_list *chains, bf_list *counters, bool with_counters)
 {
+    _cleanup_bf_request_ struct bf_request *request = NULL;
+    _cleanup_bf_response_ struct bf_response *response = NULL;
+    struct bf_marsh *chains_and_counters_marsh = NULL;
     struct bf_marsh *chains_marsh, *chain_marsh = NULL, *counters_marsh;
     struct bf_marsh *child = NULL;
     int r;
+
+    r = bf_request_new(&request, NULL, 0);
+    if (r < 0)
+        return bf_err_r(r, "failed to init request");
+
+    request->front = BF_FRONT_CLI;
+    request->cmd = BF_REQ_RULES_GET;
+    request->cli_with_counters = with_counters;
+
+    r = bf_send(request, &response);
+    if (r < 0)
+        return bf_err_r(r, "failed to send a ruleset get request");
+
+    if (response->type == BF_RES_FAILURE)
+        return response->error;
+
+    if (response->data_len == 0) {
+        bf_info("no ruleset returned\n");
+        return 0;
+    }
+
+    chains_and_counters_marsh = (struct bf_marsh *)response->data;
 
     // Get the chain list
     chains_marsh = bf_marsh_next_child(chains_and_counters_marsh, NULL);
@@ -79,38 +102,6 @@ bf_cli_get_chains_and_counters(bf_list *chains, bf_list *counters,
 
         TAKE_PTR(chain);
     }
-
-    return 0;
-}
-
-int bf_cli_ruleset_get(bf_list *chains, bf_list *counters, bool with_counters)
-{
-    _cleanup_bf_request_ struct bf_request *request = NULL;
-    _cleanup_bf_response_ struct bf_response *response = NULL;
-    int r;
-
-    r = bf_request_new(&request, NULL, 0);
-    if (r < 0)
-        return bf_err_r(r, "failed to init request");
-
-    request->front = BF_FRONT_CLI;
-    request->cmd = BF_REQ_RULES_GET;
-    request->cli_with_counters = with_counters;
-
-    r = bf_send(request, &response);
-    if (r < 0)
-        return bf_err_r(r, "failed to send a ruleset get request");
-
-    if (response->type == BF_RES_FAILURE)
-        return response->error;
-
-    if (response->data_len == 0) {
-        bf_info("no ruleset returned\n");
-        return 0;
-    }
-
-    bf_cli_get_chains_and_counters(chains, counters,
-                                   (struct bf_marsh *)response->data);
 
     return 0;
 }
