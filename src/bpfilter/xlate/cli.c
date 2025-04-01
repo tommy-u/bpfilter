@@ -151,10 +151,6 @@ static int _bf_cli_get_rules(const struct bf_request *request,
     _clean_bf_list_ bf_list cgens = bf_list_default(NULL, NULL);
     int r;
 
-    // Empty context, nothing to return
-    if (bf_ctx_is_empty())
-        return bf_response_new_success(response, NULL, 0);
-
     r = bf_ctx_get_cgens_for_front(&cgens, BF_FRONT_CLI);
     if (r < 0)
         return bf_err_r(r, "failed to get cgen list\n");
