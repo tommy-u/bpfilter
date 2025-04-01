@@ -26,7 +26,6 @@ int bf_counter_new(struct bf_counter **counter, uint64_t packets,
     bf_assert(counter);
 
     _counter = malloc(sizeof(*_counter));
-    // check for NULL
     if (!_counter)
         return -ENOMEM;
 
