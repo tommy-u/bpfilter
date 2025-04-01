@@ -8,16 +8,6 @@
 #include "core/helper.h"
 #include "core/marsh.h"
 
-void bf_counter_free(struct bf_counter **counter)
-{
-    bf_assert(counter);
-
-    if (!*counter)
-        return;
-
-    freep((void *)counter);
-}
-
 int bf_counter_new(struct bf_counter **counter, uint64_t packets,
                    uint64_t bytes)
 {
@@ -33,32 +23,6 @@ int bf_counter_new(struct bf_counter **counter, uint64_t packets,
     _counter->packets = packets;
 
     *counter = TAKE_PTR(_counter);
-
-    return 0;
-}
-
-int bf_counter_marsh(const struct bf_counter *counter, struct bf_marsh **marsh)
-{
-    _cleanup_bf_marsh_ struct bf_marsh *_marsh = NULL;
-    int r;
-
-    bf_assert(counter && marsh);
-
-    r = bf_marsh_new(&_marsh, NULL, 0);
-    if (r < 0)
-        return r;
-
-    r = bf_marsh_add_child_raw(&_marsh, &counter->packets,
-                               sizeof(counter->packets));
-    if (r < 0)
-        return r;
-
-    r = bf_marsh_add_child_raw(&_marsh, &counter->bytes,
-                               sizeof(counter->bytes));
-    if (r < 0)
-        return r;
-
-    *marsh = TAKE_PTR(_marsh);
 
     return 0;
 }
@@ -84,6 +48,42 @@ int bf_counter_new_from_marsh(struct bf_counter **counter,
     memcpy(&_counter->bytes, elem->data, sizeof(_counter->bytes));
 
     *counter = TAKE_PTR(_counter);
+
+    return 0;
+}
+
+void bf_counter_free(struct bf_counter **counter)
+{
+    bf_assert(counter);
+
+    if (!*counter)
+        return;
+
+    freep((void *)counter);
+}
+
+int bf_counter_marsh(const struct bf_counter *counter, struct bf_marsh **marsh)
+{
+    _cleanup_bf_marsh_ struct bf_marsh *_marsh = NULL;
+    int r;
+
+    bf_assert(counter && marsh);
+
+    r = bf_marsh_new(&_marsh, NULL, 0);
+    if (r < 0)
+        return r;
+
+    r = bf_marsh_add_child_raw(&_marsh, &counter->packets,
+                               sizeof(counter->packets));
+    if (r < 0)
+        return r;
+
+    r = bf_marsh_add_child_raw(&_marsh, &counter->bytes,
+                               sizeof(counter->bytes));
+    if (r < 0)
+        return r;
+
+    *marsh = TAKE_PTR(_marsh);
 
     return 0;
 }
