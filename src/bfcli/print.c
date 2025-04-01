@@ -84,8 +84,8 @@ static int bf_cli_chain_dump(struct bf_chain *chain, bf_list *counters,
             return bf_err_r(-ENOENT, "got null policy counter\n");
         }
 
-        (void)fprintf(stderr, "\tcounters: policy %lu bytes %lu packets; ",
-                      counter->bytes, counter->packets);
+        (void)fprintf(stderr, "    counters policy %lu packets %lu bytes; ",
+                      counter->packets, counter->bytes);
 
         counter = (struct bf_counter *)bf_list_get_at(
             counters, bf_list_size(&chain->rules) + 1);
@@ -93,20 +93,20 @@ static int bf_cli_chain_dump(struct bf_chain *chain, bf_list *counters,
             return bf_err_r(-ENOENT, "got null error counter\n");
         }
 
-        (void)fprintf(stderr, "error %lu bytes %lu packets\n", counter->bytes,
-                      counter->packets);
+        (void)fprintf(stderr, "error %lu packets %lu bytes \n",
+                      counter->packets, counter->bytes);
     }
 
     // Loop over rules
     bf_list_foreach (&chain->rules, rule_node) {
         struct bf_rule *rule = bf_list_node_get_data(rule_node);
 
-        (void)fprintf(stderr, "\trule: %d\n", rule->index);
+        (void)fprintf(stderr, "    rule: %d\n", rule->index);
         // Matchers
-        (void)fprintf(stderr, "\t\tmatcher(s):\n");
+        (void)fprintf(stderr, "        matcher(s):\n");
         bf_list_foreach (&rule->matchers, matcher_node) {
             struct bf_matcher *matcher = bf_list_node_get_data(matcher_node);
-            (void)fprintf(stderr, "\t\t\t\%s",
+            (void)fprintf(stderr, "            \%s",
                           bf_matcher_type_to_str(matcher->type));
             (void)fprintf(stderr, " %s ", bf_matcher_op_to_str(matcher->op));
 
@@ -127,12 +127,12 @@ static int bf_cli_chain_dump(struct bf_chain *chain, bf_list *counters,
                 return bf_err_r(-ENOENT, "got null error counter\n");
             }
 
-            (void)fprintf(stderr, "\t\tcounters: %lu bytes %lu packets\n",
-                          counter->bytes, counter->packets);
+            (void)fprintf(stderr, "        counters %lu packets %lu bytes\n",
+                          counter->packets, counter->bytes);
             bf_list_delete(counters, head);
         }
 
-        (void)fprintf(stderr, "\t\tverdict: %s\n",
+        (void)fprintf(stderr, "        verdict: %s\n",
                       bf_verdict_to_str(rule->verdict));
     }
 

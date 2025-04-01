@@ -53,11 +53,11 @@ Get all rules: requests the daemon to return all chains and all rules of each ch
 
     $ sudo bfcli ruleset get --with-counters
     chain BF_HOOK_NF_LOCAL_IN{attach=yes,ifindex=0} policy: ACCEPT
-        counters: policy 32742421 bytes 40841 packets; error 0 bytes 0 packets
+        counters policy 40841 packets 32742421 bytes; error 0 packets 0 bytes
         rule: 0
                 matcher(s):
                         ip4.saddr not 0xc0 0xa8 0x00 0x44 0xff 0xff 0xff 0xff
-                counters: 535936419 bytes 484820 packets
+                counters 484820 packets 535936419 bytes
                 verdict: ACCEPT
 
 ``ruleset flush``
