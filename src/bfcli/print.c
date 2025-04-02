@@ -8,8 +8,8 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "core/chain.h"
 #include "core/counter.h"
@@ -119,12 +119,10 @@ static int bf_cli_chain_dump(struct bf_chain *chain, bf_list *counters,
     bf_list_foreach (&chain->rules, rule_node) {
         struct bf_rule *rule = bf_list_node_get_data(rule_node);
 
-        (void)fprintf(stderr, "    rule: %d\n", rule->index);
-        // Matchers
-        (void)fprintf(stderr, "        matcher(s):\n");
+        (void)fprintf(stderr, "    rule\n");
         bf_list_foreach (&rule->matchers, matcher_node) {
             struct bf_matcher *matcher = bf_list_node_get_data(matcher_node);
-            (void)fprintf(stderr, "            \%s",
+            (void)fprintf(stderr, "        \%s",
                           bf_matcher_type_to_str(matcher->type));
             (void)fprintf(stderr, " %s ", bf_matcher_op_to_str(matcher->op));
 
@@ -150,8 +148,7 @@ static int bf_cli_chain_dump(struct bf_chain *chain, bf_list *counters,
             bf_list_delete(counters, head);
         }
 
-        (void)fprintf(stderr, "        %s\n",
-                      bf_verdict_to_str(rule->verdict));
+        (void)fprintf(stderr, "        %s\n", bf_verdict_to_str(rule->verdict));
     }
 
     (void)fprintf(stderr, "\n");
