@@ -75,16 +75,13 @@ static int bf_cli_chain_dump(struct bf_chain *chain, bf_list *counters,
     }
 
     if (used_opts & (1 << BF_HOOK_OPT_IFINDEX)) {
-        if (need_comma)
-            (void)fprintf(stderr, ",");
-        (void)fprintf(stderr, "ifindex=%d", opts->ifindex);
+        (void)fprintf(stderr, "%sifindex=%d", need_comma ? "," : "",
+                      opts->ifindex);
         need_comma = true;
     }
 
     if (used_opts & (1 << BF_HOOK_OPT_NAME)) {
-        if (need_comma)
-            (void)fprintf(stderr, ",");
-        (void)fprintf(stderr, "name=%s", opts->name);
+        (void)fprintf(stderr, "%sname=%s", need_comma ? "," : "", opts->name);
         need_comma = true;
     }
 
