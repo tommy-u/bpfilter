@@ -150,7 +150,7 @@ static int bf_cli_chain_dump(struct bf_chain *chain, bf_list *counters,
             bf_list_delete(counters, head);
         }
 
-        (void)fprintf(stderr, "        verdict: %s\n",
+        (void)fprintf(stderr, "        %s\n",
                       bf_verdict_to_str(rule->verdict));
     }
 
