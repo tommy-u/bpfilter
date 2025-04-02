@@ -89,7 +89,10 @@ static int bf_cli_chain_dump(struct bf_chain *chain, bf_list *counters,
     (void)fprintf(stderr, " policy %s\n", bf_verdict_to_str(chain->policy));
 
     if (with_counters) {
-        // List order is Error, Policy, and then Rules counters.
+        /*
+         * List order is Error, Policy, and then Rules counters.
+         * Desired print order is Policy, Error, and then Rules.
+        */
         struct bf_list_node *error_node, *policy_node;
 
         error_node = bf_list_get_head(counters);
