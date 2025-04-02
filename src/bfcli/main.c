@@ -217,7 +217,7 @@ int _bf_do_ruleset_get(int argc, char *argv[])
 
     r = argp_parse(&argp, argc, argv, 0, 0, &opts);
     if (r)
-        bf_err_r(r, "failed to parse arguments");
+        return bf_err_r(r, "failed to parse arguments");
 
     // Ask libbpfilter to make a request to the daemon
     r = bf_cli_ruleset_get(&chains, &counters, opts.with_counters);
