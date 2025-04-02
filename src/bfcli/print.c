@@ -2,13 +2,14 @@
 /*
  * Copyright (c) 2023 Meta Platforms, Inc. and affiliates.
  */
+#include "bfcli/print.h"
+
 #include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 
-#include "bfcli/print.h"
 #include "core/chain.h"
 #include "core/counter.h"
 #include "core/helper.h"
@@ -107,8 +108,8 @@ static int bf_cli_chain_dump(struct bf_chain *chain, bf_list *counters,
         bf_list_delete(counters, policy_node);
 
         counter = (struct bf_counter *)bf_list_node_get_data(error_node);
-        (void)fprintf(stderr, "error %lu packets %lu bytes\n",
-                      counter->packets, counter->bytes);
+        (void)fprintf(stderr, "error %lu packets %lu bytes\n", counter->packets,
+                      counter->bytes);
 
         bf_list_delete(counters, bf_list_get_head(counters));
     }
