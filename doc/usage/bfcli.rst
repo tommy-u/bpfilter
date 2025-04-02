@@ -33,10 +33,10 @@ Define a new ruleset: read the chains and rules defined on the command line or i
 ``ruleset get``
 ~~~~~~~~~~~~~~~
 
-Get all rules: requests the daemon to return all chains and all rules of each chain to the CLI. Optionally include rule counter values.
+Print the ruleset: request all the chains and rules from the daemon. Optionally include rule counter values.
 
 **Options**
-  - ``--with-counters``: Include if you would like to see counter values for each rule.
+  - ``--with-counters``: print the counter values for each rule
 
 **Example**
 
@@ -44,21 +44,19 @@ Get all rules: requests the daemon to return all chains and all rules of each ch
 
     $ sudo bfcli ruleset get
     chain BF_HOOK_NF_LOCAL_IN{attach=yes} policy: ACCEPT
-        rule: 0
-                matcher(s):
-                        ip4.saddr not 0xc0 0xa8 0x00 0x44 0xff 0xff 0xff 0xff
-                verdict: ACCEPT
+        rule
+            ip4.saddr eq 0x0a 0x00 0x00 0x01 0xff 0xff 0xff 0xff
+            ACCEPT
 
 .. code:: shell
 
     $ sudo bfcli ruleset get --with-counters
     chain BF_HOOK_NF_LOCAL_IN{attach=yes} policy: ACCEPT
-        counters policy 40841 packets 32742421 bytes; error 0 packets 0 bytes
-        rule: 0
-                matcher(s):
-                        ip4.saddr not 0xc0 0xa8 0x00 0x44 0xff 0xff 0xff 0xff
-                counters 484820 packets 535936419 bytes
-                verdict: ACCEPT
+        counters policy 3224 packets 1966502 bytes; error 0 packets 0 bytes
+        rule
+            ip4.saddr eq 0x0a 0x00 0x00 0x01 0xff 0xff 0xff 0xff
+            counters 0 packets 0 bytes
+            ACCEPT
 
 ``ruleset flush``
 ~~~~~~~~~~~~~~~~~

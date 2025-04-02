@@ -64,9 +64,8 @@ int _bf_cli_ruleset_flush(const struct bf_request *request,
 /**
  * Create a marshalled structure of counters.
  *
- * @param cgens A list of code generators. Must be non-NULL.
- * @param marsh Marsh to serialize the counters into.
- *        Can't be NULL.
+ * @param cgens A list of code generators. Can't be NULL.
+ * @param counters A list of counters. Can't be NULL.
  * @return 0 on success or negative error code on failure.
  */
 static int _bf_cli_get_counters(const bf_list *cgens, bf_list *counters)
