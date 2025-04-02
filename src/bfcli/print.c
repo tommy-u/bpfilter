@@ -86,7 +86,7 @@ static int bf_cli_chain_dump(struct bf_chain *chain, bf_list *counters,
     }
 
     (void)fprintf(stderr, "}");
-    (void)fprintf(stderr, " policy: %s\n", bf_verdict_to_str(chain->policy));
+    (void)fprintf(stderr, " policy %s\n", bf_verdict_to_str(chain->policy));
 
     if (with_counters) {
         // List order is Error, Policy, and then Rules counters.
