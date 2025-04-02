@@ -119,7 +119,7 @@ static int bf_cli_chain_dump(struct bf_chain *chain, bf_list *counters,
         (void)fprintf(stderr, "    rule\n");
         bf_list_foreach (&rule->matchers, matcher_node) {
             struct bf_matcher *matcher = bf_list_node_get_data(matcher_node);
-            (void)fprintf(stderr, "        \%s",
+            (void)fprintf(stderr, "        %s",
                           bf_matcher_type_to_str(matcher->type));
             (void)fprintf(stderr, " %s ", bf_matcher_op_to_str(matcher->op));
 
