@@ -62,7 +62,7 @@ int _bf_cli_ruleset_flush(const struct bf_request *request,
 }
 
 /**
- * Create a marshalled structure of counters.
+ * Get a list of counters (chain and rule) for all cgens.
  *
  * @param cgens A list of code generators. Can't be NULL.
  * @param counters A list of counters. Can't be NULL.
@@ -118,11 +118,11 @@ static int _bf_cli_ruleset_get(const struct bf_request *request,
 
     r = bf_marsh_new(&marsh, NULL, 0);
     if (r < 0)
-        return bf_err_r(r, "failed to get new marsh\n");
+        return bf_err_r(r, "failed to get new marsh");
 
     r = bf_ctx_get_cgens_for_front(&cgens, BF_FRONT_CLI);
     if (r < 0)
-        return bf_err_r(r, "failed to get cgen list\n");
+        return bf_err_r(r, "failed to get cgen list");
 
     bf_list_foreach (&cgens, cgen_node) {
         struct bf_cgen *cgen = bf_list_node_get_data(cgen_node);
@@ -140,19 +140,19 @@ static int _bf_cli_ruleset_get(const struct bf_request *request,
     // Marsh the chain list
     r = bf_list_marsh(&chains, &chain_marsh);
     if (r < 0)
-        return bf_err_r(r, "failed to marshal list\n");
+        return bf_err_r(r, "failed to marshal list");
 
     r = bf_marsh_add_child_obj(&marsh, chain_marsh);
     if (r < 0)
-        return bf_err_r(r, "failed to add chain list to marsh\n");
+        return bf_err_r(r, "failed to add chain list to marsh");
 
     r = bf_list_marsh(&counters, &counters_marsh);
     if (r < 0)
-        return bf_err_r(r, "failed to marshal list\n");
+        return bf_err_r(r, "failed to marshal list");
 
     r = bf_marsh_add_child_obj(&marsh, counters_marsh);
     if (r < 0)
-        return bf_err_r(r, "failed to add chain list to marsh\n");
+        return bf_err_r(r, "failed to add chain list to marsh");
 
     return bf_response_new_success(response, (void *)marsh,
                                    bf_marsh_size(marsh));

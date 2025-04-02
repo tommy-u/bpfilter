@@ -46,7 +46,7 @@ int bf_cli_ruleset_get(bf_list *chains, bf_list *counters, bool with_counters)
         return response->error;
 
     if (response->data_len == 0) {
-        bf_info("no ruleset returned\n");
+        bf_info("no ruleset returned");
         return 0;
     }
 

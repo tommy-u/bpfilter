@@ -94,11 +94,11 @@ static int bf_cli_chain_dump(struct bf_chain *chain, bf_list *counters,
 
         error_node = bf_list_get_head(counters);
         if (!error_node)
-            return bf_err_r(-ENOENT, "expected error counter\n");
+            return bf_err_r(-ENOENT, "expected error counter");
 
         policy_node = bf_list_node_next(error_node);
         if (!policy_node)
-            return bf_err_r(-ENOENT, "expected policy counter\n");
+            return bf_err_r(-ENOENT, "expected policy counter");
 
         counter = bf_list_node_get_data(policy_node);
         (void)fprintf(stderr, "    counters policy %lu packets %lu bytes; ",
@@ -132,12 +132,12 @@ static int bf_cli_chain_dump(struct bf_chain *chain, bf_list *counters,
         if (with_counters && rule->counters) {
             struct bf_list_node *head = bf_list_get_head(counters);
             if (!head) {
-                return bf_err_r(-ENOENT, "no entry in list \n");
+                return bf_err_r(-ENOENT, "no entry in list");
             }
 
             counter = (struct bf_counter *)bf_list_node_get_data(head);
             if (!counter) {
-                return bf_err_r(-ENOENT, "got null error counter\n");
+                return bf_err_r(-ENOENT, "got null error counter");
             }
 
             (void)fprintf(stderr, "        counters %lu packets %lu bytes\n",

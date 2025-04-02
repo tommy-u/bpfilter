@@ -222,11 +222,11 @@ int _bf_do_ruleset_get(int argc, char *argv[])
     // Ask libbpfilter to make a request to the daemon
     r = bf_cli_ruleset_get(&chains, &counters, opts.with_counters);
     if (r < 0)
-        return bf_err_r(r, "failed to request ruleset\n");
+        return bf_err_r(r, "failed to request ruleset");
 
     r = bf_cli_dump_ruleset(&chains, &counters, opts.with_counters);
     if (r)
-        return bf_err_r(r, "failed to dump ruleset\n");
+        return bf_err_r(r, "failed to dump ruleset");
 
     return 0;
 }
