@@ -2,15 +2,13 @@
 /*
  * Copyright (c) 2023 Meta Platforms, Inc. and affiliates.
  */
-
-#include "print.h"
-
 #include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 
+#include "bfcli/print.h"
 #include "core/chain.h"
 #include "core/counter.h"
 #include "core/helper.h"
