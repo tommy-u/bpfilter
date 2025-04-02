@@ -5,6 +5,7 @@
 
 #include <errno.h>
 #include <stdlib.h>
+#include <sys/types.h>
 
 #include "bpfilter/cgen/cgen.h"
 #include "bpfilter/cgen/program.h"
@@ -68,132 +69,94 @@ int _bf_cli_ruleset_flush(const struct bf_request *request,
  *        Can't be NULL.
  * @return 0 on success or negative error code on failure.
  */
-static int _bf_cli_get_counters_marsh(bf_list *cgens, struct bf_marsh **marsh)
+static int _bf_cli_get_counters(const bf_list *cgens, bf_list *counters)
 {
-    _clean_bf_list_ bf_list counters =
-        bf_list_default(bf_counter_free, bf_counter_marsh);
+    _clean_bf_list_ bf_list _counters =
+        bf_list_default(counters->ops.free, counters->ops.marsh);
     int r;
 
-    bf_assert(marsh && cgens);
+    bf_assert(cgens && counters);
 
-    // Iterate over chains and rules to get the counters
     bf_list_foreach (cgens, cgen_node) {
         struct bf_cgen *cgen = bf_list_node_get_data(cgen_node);
-        struct bf_counter *counter;
 
-        /**
-         * Each chain has 2 counters: policy and error
-         * Each rule has 1 counter regardless of rule->counters.
-         * So we'll add a zero counter for the case where
-         * rule->counters == false.
-        */
-        bf_list_foreach (&cgen->chain->rules, rule_node) {
-            struct bf_rule *rule = bf_list_node_get_data(rule_node);
-            int map_idx = 0;
+        for (ssize_t i = -2; i < (ssize_t)bf_list_size(&cgen->chain->rules);
+             ++i) {
+            _cleanup_bf_counter_ struct bf_counter *counter = NULL;
 
             r = bf_counter_new(&counter, 0, 0);
             if (r)
-                return bf_err_r(r, "failed to create counter\n");
+                return r;
 
-            if (rule->counters) {
-                r = bf_cgen_get_counter(cgen, map_idx, counter);
-                if (r < 0)
-                    return bf_err_r(r, "failed to get rule counter\n");
-            }
+            r = bf_cgen_get_counter(cgen, i, counter);
+            if (r)
+                return r;
 
-            r = bf_list_add_tail(&counters, counter);
-            if (r < 0)
-                return bf_err_r(r, "failed to add rule counter to list\n");
-            map_idx++;
+            r = bf_list_add_tail(&_counters, counter);
+            if (r)
+                return r;
+
+            TAKE_PTR(counter);
         }
-
-        // Chain's policy counter
-        r = bf_counter_new(&counter, 0, 0);
-        if (r)
-            return bf_err_r(r, "failed to create counter\n");
-
-        r = bf_cgen_get_counter(cgen, BF_COUNTER_POLICY, counter);
-        if (r < 0)
-            return bf_err_r(r, "failed to get policy counter\n");
-
-        r = bf_list_add_tail(&counters, counter);
-        if (r < 0)
-            return bf_err_r(r, "failed to add policy counter to list\n");
-
-        // Chain's error counter
-        r = bf_counter_new(&counter, 0, 0);
-        if (r)
-            return bf_err_r(r, "failed to create counter\n");
-        r = bf_cgen_get_counter(cgen, BF_COUNTER_ERRORS, counter);
-        if (r < 0)
-            return bf_err_r(r, "failed to get error counter\n");
-
-        r = bf_list_add_tail(&counters, counter);
-        if (r < 0)
-            return bf_err_r(r, "failed to add error counter to list\n");
     }
 
-    r = bf_list_marsh(&counters, marsh);
-    if (r < 0)
-        return bf_err_r(r, "failed to make counters list marsh\n");
+    *counters = bf_list_move(_counters);
 
     return 0;
 }
 
-static int _bf_cli_get_rules(const struct bf_request *request,
-                             struct bf_response **response)
+static int _bf_cli_ruleset_get(const struct bf_request *request,
+                               struct bf_response **response)
 {
-    _cleanup_bf_marsh_ struct bf_marsh *chains_marsh = NULL,
-                                       *counter_marsh = NULL,
-                                       *result_marsh = NULL;
-    _clean_bf_list_ bf_list chains = bf_list_default(NULL, bf_chain_marsh);
-    _clean_bf_list_ bf_list _chains = bf_list_default(NULL, bf_chain_marsh);
+    _cleanup_bf_marsh_ struct bf_marsh *marsh = NULL;
+    _cleanup_bf_marsh_ struct bf_marsh *chain_marsh = NULL;
+    _cleanup_bf_marsh_ struct bf_marsh *counters_marsh = NULL;
     _clean_bf_list_ bf_list cgens = bf_list_default(NULL, NULL);
+    _clean_bf_list_ bf_list chains = bf_list_default(NULL, bf_chain_marsh);
+    _clean_bf_list_ bf_list counters =
+        bf_list_default(bf_counter_free, bf_counter_marsh);
     int r;
+
+    r = bf_marsh_new(&marsh, NULL, 0);
+    if (r < 0)
+        return bf_err_r(r, "failed to get new marsh\n");
 
     r = bf_ctx_get_cgens_for_front(&cgens, BF_FRONT_CLI);
     if (r < 0)
         return bf_err_r(r, "failed to get cgen list\n");
 
-    // iterate over the codegens to get the chains
     bf_list_foreach (&cgens, cgen_node) {
         struct bf_cgen *cgen = bf_list_node_get_data(cgen_node);
-        r = bf_list_add_tail(&_chains, cgen->chain);
+        r = bf_list_add_tail(&chains, cgen->chain);
         if (r)
             return bf_err_r(r, "failed to add chain to list");
     }
 
-    chains = bf_list_move(_chains);
+    if (request->cli_with_counters) {
+        r = _bf_cli_get_counters(&cgens, &counters);
+        if (r)
+            return bf_err_r(r, "failed to get counters list");
+    }
 
     // Marsh the chain list
-    r = bf_list_marsh(&chains, &chains_marsh);
+    r = bf_list_marsh(&chains, &chain_marsh);
     if (r < 0)
         return bf_err_r(r, "failed to marshal list\n");
 
-    // Marsh the counters
-    if (request->cli_with_counters) {
-        r = _bf_cli_get_counters_marsh(&cgens, &counter_marsh);
-    } else {
-        r = bf_marsh_new(&counter_marsh, NULL, 0);
-    }
-    if (r < 0)
-        return bf_err_r(r, "failed to get counters marsh\n");
-
-    // Marsh the chain list and counters marshes into a single response
-    r = bf_marsh_new(&result_marsh, NULL, 0);
-    if (r < 0)
-        return bf_err_r(r, "failed to get new marsh\n");
-
-    r = bf_marsh_add_child_obj(&result_marsh, chains_marsh);
+    r = bf_marsh_add_child_obj(&marsh, chain_marsh);
     if (r < 0)
         return bf_err_r(r, "failed to add chain list to marsh\n");
 
-    r = bf_marsh_add_child_obj(&result_marsh, counter_marsh);
+    r = bf_list_marsh(&counters, &counters_marsh);
     if (r < 0)
-        return bf_err_r(r, "failed to add counter to marsh\n");
+        return bf_err_r(r, "failed to marshal list\n");
 
-    return bf_response_new_success(response, (void *)result_marsh,
-                                   bf_marsh_size(result_marsh));
+    r = bf_marsh_add_child_obj(&marsh, counters_marsh);
+    if (r < 0)
+        return bf_err_r(r, "failed to add chain list to marsh\n");
+
+    return bf_response_new_success(response, (void *)marsh,
+                                   bf_marsh_size(marsh));
 }
 
 int _bf_cli_set_rules(const struct bf_request *request,
@@ -255,7 +218,7 @@ static int _bf_cli_request_handler(struct bf_request *request,
         r = _bf_cli_set_rules(request, response);
         break;
     case BF_REQ_RULES_GET:
-        r = _bf_cli_get_rules(request, response);
+        r = _bf_cli_ruleset_get(request, response);
         break;
     default:
         r = bf_err_r(-EINVAL, "unsupported command %d for CLI front-end",

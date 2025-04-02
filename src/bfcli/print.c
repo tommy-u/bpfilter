@@ -92,26 +92,27 @@ static int bf_cli_chain_dump(struct bf_chain *chain, bf_list *counters,
     (void)fprintf(stderr, " policy: %s\n", bf_verdict_to_str(chain->policy));
 
     if (with_counters) {
-        /**
-         * Rule counters are followed by policy and error counters.
-         * These bf_list_get_at() calls cost linear time.
-        */
-        counter = (struct bf_counter *)bf_list_get_at(
-            counters, bf_list_size(&chain->rules));
-        if (!counter)
-            return bf_err_r(-ENOENT, "got null policy counter\n");
+        // List order is Error, Policy, and then Rules counters.
+        struct bf_list_node *error_node, *policy_node;
 
+        error_node = bf_list_get_head(counters);
+        if (!error_node)
+            return bf_err_r(-ENOENT, "expected error counter\n");
+
+        policy_node = bf_list_node_next(error_node);
+        if (!policy_node)
+            return bf_err_r(-ENOENT, "expected policy counter\n");
+
+        counter = bf_list_node_get_data(policy_node);
         (void)fprintf(stderr, "    counters policy %lu packets %lu bytes; ",
                       counter->packets, counter->bytes);
+        bf_list_delete(counters, policy_node);
 
-        counter = (struct bf_counter *)bf_list_get_at(
-            counters, bf_list_size(&chain->rules) + 1);
-        if (!counter) {
-            return bf_err_r(-ENOENT, "got null error counter\n");
-        }
-
+        counter = (struct bf_counter *)bf_list_node_get_data(error_node);
         (void)fprintf(stderr, "error %lu packets %lu bytes \n",
                       counter->packets, counter->bytes);
+
+        bf_list_delete(counters, bf_list_get_head(counters));
     }
 
     // Loop over rules
@@ -151,12 +152,6 @@ static int bf_cli_chain_dump(struct bf_chain *chain, bf_list *counters,
 
         (void)fprintf(stderr, "        verdict: %s\n",
                       bf_verdict_to_str(rule->verdict));
-    }
-
-    if (with_counters) {
-        // remove the chain counters: policy and error
-        bf_list_delete(counters, bf_list_get_head(counters));
-        bf_list_delete(counters, bf_list_get_head(counters));
     }
 
     (void)fprintf(stderr, "\n");
