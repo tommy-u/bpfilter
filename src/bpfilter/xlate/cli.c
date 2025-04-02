@@ -62,7 +62,8 @@ int _bf_cli_ruleset_flush(const struct bf_request *request,
 }
 
 /**
- * Get a list of counters (chain and rule) for all cgens.
+ * Get a list of counters (chain and rule) for all cgens
+ * in the input list.
  *
  * @param cgens A list of code generators. Can't be NULL.
  * @param counters A list of counters. Can't be NULL.
