@@ -13,9 +13,9 @@
 /**
  * @struct bf_counter
  *
- * Counters assigne to each rule.
+ * Counters assigned to each rule.
  *
-* @var bf_counter::packets
+ * @var bf_counter::packets
  *  Number of packets gone through a rule.
  * @var bf_counter::bytes
  *  Number of bytes gone through a rule.

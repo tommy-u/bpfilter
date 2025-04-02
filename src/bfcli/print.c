@@ -109,7 +109,7 @@ static int bf_cli_chain_dump(struct bf_chain *chain, bf_list *counters,
         bf_list_delete(counters, policy_node);
 
         counter = (struct bf_counter *)bf_list_node_get_data(error_node);
-        (void)fprintf(stderr, "error %lu packets %lu bytes \n",
+        (void)fprintf(stderr, "error %lu packets %lu bytes\n",
                       counter->packets, counter->bytes);
 
         bf_list_delete(counters, bf_list_get_head(counters));
